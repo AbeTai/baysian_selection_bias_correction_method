@@ -188,10 +188,27 @@ class proposed_method_binomial:
             beta_strage = np.vstack((beta_strage, par_beta))
             num += 1
 
-        beta_posterior = beta_strage[self.burn:]
+        beta_posterior = beta_strage[self.burn+1:]
         self.beta_posterior = beta_posterior
         #print(f"beta_posterior shape: {beta_posterior.shape}") # デバッグ用出力
         
 
         return beta_posterior
+    
+    def estimate(self):
+        # 切片項を追加するために、全て1の列ベクトルを作成
+        intercept_column = np.ones((self.draw, 1))
+        # X を正規分布から生成
+        X_list = []
+        for i in range(self.n_features-1):
+            X_i = np.random.normal(loc=self.X_mu[i], scale=self.X_sigma[i], size=self.draw)
+            X_list.append(X_i)
+        # 全て1の列ベクトルを先頭に挿入
+        X_list.insert(0, intercept_column.flatten())
+        X_true = np.array(X_list).T
+        eta = np.sum(self.beta_posterior*X_true, axis=1)
+        P_y_list = 1 /(1 + np.exp(-eta))
+        P_y = P_y_list.mean()
+
+        return P_y
 

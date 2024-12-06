@@ -222,6 +222,30 @@ class GenerateData_binomial:
         # y を生成（確率に基づいてクラスをサンプリング）
         self.y = np.random.binomial(1, probabilities) # 2項分布からサンプリング
 
+        """
+        # 2項ロジスティック回帰モデルの真のパラメータを分布から生成
+        # 個体ごとに真のパラメータが異なるようにする（ベイズ的な設定）
+        beta = []
+        for i in range(self.n_features + 1):
+            beta_mu = self.beta_mu[i]
+            beta_sigma = self.beta_sigma[i]
+            beta_i = np.random.normal(
+                loc=beta_mu,
+                scale=beta_sigma,
+                size=1
+            )
+            beta.append(beta_i[0])  # size=1なので、値を取り出す
+        beta = np.array(beta)  # 形状: (n_features + 1,)
+
+        # 線形予測子を計算
+        eta = self.X * beta  # 形状: (n_population,)
+        # シグモイド関数で確率に変換
+        probabilities = 1 / (1 + np.exp(-eta))  # 形状: (n_population,)
+
+        # y を生成（確率に基づいてクラスをサンプリング）
+        self.y = np.random.binomial(1, probabilities) # 2項分布からサンプリング
+        """
+
         return self.X, self.y
 
     def generate_bias_data_deterministic(

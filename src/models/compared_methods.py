@@ -25,7 +25,7 @@ class compared_methods:
     def maximum_likelihood(self, draw) -> None:
         self.draw = draw
         # パラメータの学習
-        model = LogisticRegression(penalty = None)
+        model = LogisticRegression(solver='lbfgs', max_iter=1000, penalty = None)
         model.fit(self.X, self.y)
 
         # パラメータの取得
