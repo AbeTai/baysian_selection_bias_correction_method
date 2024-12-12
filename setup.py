@@ -11,6 +11,7 @@ setup(
         "scipy==1.14.1",
         "scikit-learn==1.5.2",
         "matplotlib==3.9.2",
+        "seaborn",
         "tqdm==4.67.0",
         "polyagamma==2.0.1",
         "setuptools",

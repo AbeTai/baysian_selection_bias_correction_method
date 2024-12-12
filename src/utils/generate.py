@@ -330,8 +330,8 @@ class GenerateData_binomial:
             self, 
             n_samples: int, 
             X_features_bias: int, 
-            threshfold: int = None,  # threshfold をオプション引数にする
-            sample_type:str = "linear",
+            sample_type,
+            threshfold: int = None # threshfold をオプション引数にする
             ):
         self.n_samples = n_samples
         if self.X is None or self.y is None:
@@ -347,31 +347,8 @@ class GenerateData_binomial:
         df.columns = col_names
         bias_col = f"X_{X_features_bias}"
 
-        # 線形の場合
-        if sample_type == "linear":
-            sum_ = df[bias_col].sum()
-            min_ = df[bias_col].min()
-            df["weight"] = df[bias_col].apply(lambda x: (x-min_)/sum_)
-            sampled_df = df.sample(n=self.n_samples, weights="weight", replace=True)
-            sampled_X = sampled_df.drop(columns=["y", "weight"]).values
-            sampled_y = sampled_df["y"].values
-            
-            return sampled_X, sampled_y
-
-
-        # 非線形の場合
-        elif sample_type == "non_linear":
-            beta = 1 # ロジスティク回帰のパラメータ．大きいほど値の大きいものをサンプリングしやすい
-            weights = 1 / (1 + np.exp(-(beta * df[bias_col].values)))
-            probs = weights / weights.sum()
-            sampled_df = df.sample(n=self.n_samples, weights=probs, replace=True)
-            sampled_X = sampled_df.drop(columns=["y"]).values
-            sampled_y = sampled_df["y"].values
-            return sampled_X, sampled_y
-
-
         # 閾値使用かつステップ的な場合
-        elif sample_type == "threshfold_step":
+        if sample_type == "threshfold_step":
             prob = 0.7  # 確率probで閾値以上をサンプリングし、1-probで以下をサンプリングする
             targets = np.random.binomial(1, prob, size=self.n_samples)
             upper_sample_num = np.count_nonzero(targets)
@@ -383,17 +360,29 @@ class GenerateData_binomial:
             sampled_y = sampled_df["y"].values
 
             return sampled_X, sampled_y
+        
+        # 正規分布の尤度に基づいてサンプリングする場合
+        elif sample_type == "norm":
+            mu = threshfold
+            sigma = 3
+            likelihoods = 1 / (sigma * np.sqrt(2 * np.pi)) * np.exp(-0.5 * ((df[bias_col] - mu) / sigma)**2)
+            probs = likelihoods / likelihoods.sum()
+            sampled_df = df.sample(n=self.n_samples, weights=probs, replace=False)
+            sampled_X = sampled_df.drop(columns=["y"]).values
+            sampled_y = sampled_df["y"].values
+            return sampled_X, sampled_y, probs
+
             
         # 閾値使用かつ非線形な場合
-        elif sample_type == "threshfold_smooth":
+        elif sample_type == "prop":
             beta_1 = 0.5
             beta_0 = -threshfold * beta_1
             weights = 1 / (1 + np.exp(-(beta_0+beta_1*df[bias_col].values)))
             probs = weights / weights.sum()
-            sampled_df = df.sample(n=self.n_samples, weights=probs, replace=True)
+            sampled_df = df.sample(n=self.n_samples, weights=probs, replace=False)
             sampled_X = sampled_df.drop(columns=["y"]).values
             sampled_y = sampled_df["y"].values
-            return sampled_X, sampled_y
+            return sampled_X, sampled_y, probs
             
 
         
